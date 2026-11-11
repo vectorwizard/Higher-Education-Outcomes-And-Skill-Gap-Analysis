@@ -4,7 +4,7 @@
 **Study context:** India; technology job postings compared with the AICTE 2022 undergraduate CSE model curriculum  
 **Data snapshot:** 2026-11-11  
 **Prepared by:** [Student name]  
-**Institution:** [College / university]
+**Institution:** [College / university] 
 
 ## Project overview
 
