@@ -1,0 +1,21 @@
+demand_rank,skill,active_job_postings,share_of_active_technology_postings_pct,curriculum_coverage_score,coverage_category
+1,Python,42872,33.48,1,Related or elective coverage
+2,CI/CD,32208,25.15,1,Related or elective coverage
+3,SQL,31826,24.85,2,Core/direct coverage
+4,AWS,30667,23.95,1,Related or elective coverage
+5,Microsoft Azure,27411,21.41,1,Related or elective coverage
+6,REST APIs,22585,17.64,1,Related or elective coverage
+7,Java,20790,16.24,1,Related or elective coverage
+8,DevOps,19596,15.30,1,Related or elective coverage
+9,Kubernetes,16792,13.11,1,Related or elective coverage
+10,Google Cloud (GCP),16769,13.10,1,Related or elective coverage
+11,Docker,16706,13.05,1,Related or elective coverage
+12,JavaScript,16134,12.60,0,No explicit match
+13,Microservices,15348,11.99,1,Related or elective coverage
+14,LLMs (Large Language Models),13310,10.39,0,No explicit match
+15,Machine Learning,13139,10.26,1,Related or elective coverage
+16,React,12868,10.05,0,No explicit match
+17,Linux,12257,9.57,2,Core/direct coverage
+18,PostgreSQL,9565,7.47,1,Related or elective coverage
+19,TypeScript,9558,7.46,0,No explicit match
+20,Terraform,8983,7.02,0,No explicit match

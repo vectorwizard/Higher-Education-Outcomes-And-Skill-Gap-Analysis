@@ -1,0 +1,339 @@
+---
+title: "Higher Education Outcomes and Skill Gap Analysis"
+author: "[Student Name]"
+date: "2026-11-11"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    theme: readable
+    code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                      fig.width = 9, fig.height = 5.5, dpi = 120)
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(knitr)
+library(scales)
+
+# Locate the project root whether knitting from the notebook folder or project root.
+candidates <- unique(normalizePath(c(getwd(), file.path(getwd(), ".."),
+                                    file.path(getwd(), "../..")),
+                                  winslash = "/", mustWork = FALSE))
+project_root <- candidates[file.exists(file.path(candidates, "data/raw/jobspiq_skills_demand_india_2026-11-11.csv"))][1]
+if (is.na(project_root)) stop("Could not locate project root. Open the .Rproj file in RStudio before knitting.")
+knitr::opts_knit$set(root.dir = project_root)
+raw_path <- file.path(project_root, "data/raw/jobspiq_skills_demand_india_2026-11-11.csv")
+map_path <- file.path(project_root, "data/processed/aicte_2022_curriculum_skill_mapping.csv")
+```
+
+# Executive summary
+
+This project uses **descriptive analytics** to investigate the alignment between technical skills mentioned in Indian technology job postings and the skills/topics represented in a published undergraduate CSE reference curriculum. The analysis uses Jobspiq's public Indian technology skills-demand table captured on **11 November 2026** and a researcher-coded mapping to the **AICTE 2022 CSE model curriculum**.
+
+The captured Jobspiq page reported **128,053 active technology job postings** in its rolling 30-day window and displayed 76 skill rows. The most frequently mentioned skill was `r read_csv(raw_path, show_col_types = FALSE) |> arrange(desc(active_job_postings)) |> slice(1) |> pull(skill)`.
+
+The curriculum comparison is a reference-model analysis, not an audit of a particular college. It does not measure actual graduate placement rates or prove that a particular skill gap causes unemployment. An institution-specific syllabus can be mapped using the supplied template.
+
+# Introduction and background
+
+Higher education institutions are expected to provide foundational knowledge and practical capabilities that support graduates' transition into employment. Technology employers may mention a broad range of programming languages, databases, cloud platforms, data tools and software-development practices in job advertisements. Comparing this demand with a published curriculum can help identify areas where the curriculum explicitly addresses a skill, provides related foundations, or does not explicitly mention the skill.
+
+The project uses the AICTE model curriculum as a reference because it is a published national model for undergraduate Computer Science and Engineering. It includes core topics such as programming, database systems, operating systems and networks, and discusses optional micro-specialisations such as software engineering, machine learning, and distributed/cloud systems.
+
+# Problem statement
+
+There is a need to understand whether the technical skills frequently mentioned in Indian technology job advertisements are reflected in the topics and courses described by an undergraduate CSE reference curriculum. The analysis will summarise demand, classify curriculum coverage, and highlight potential alignment gaps for further institutional review.
+
+# Research objectives
+
+1. Identify the most frequently mentioned technical skills in the captured Indian technology job-posting dataset.
+2. Rank skills by the number of active postings in which they appear.
+3. Identify the top quartile of demanded skills.
+4. Compare those skills with topics and courses in the AICTE 2022 CSE model curriculum.
+5. Classify coverage and calculate a transparent, rubric-based alignment indicator.
+6. Document limitations and suggest where institution-specific curriculum and graduate-outcome data would improve the study.
+
+# Analytics type and research questions
+
+## Selected type: Descriptive analytics
+
+Descriptive analytics is selected because the first objective is to summarise existing data and describe patterns. The analysis does not predict future job demand and does not prescribe a curriculum change as a statistically proven intervention.
+
+## Main research question
+
+**Which technical skills are most frequently mentioned in active Indian technology job postings, and to what extent are those skills represented in the AICTE 2022 undergraduate CSE model curriculum?**
+
+## Sub-questions
+
+- Which skills have the largest number of active job-posting mentions?
+- Which skills are in the top quartile of the observed demand distribution?
+- How many top-quartile skills have direct/core, related/elective, or no explicit curriculum match?
+- Which top-demand skills have the largest gap-priority score under the stated rubric?
+
+# Datasets and access plan
+
+## Dataset 1: Indian technology skills demand
+
+**Source:** Jobspiq, Tech Skills in Demand in India (https://jobspiq.in/skills). The source page states that counts refer to active technology job listings located in India or remote listings open to candidates in India. It reports a rolling 30-day window and notes that counts represent postings, not hires. The page was accessed on 11 November 2026. The displayed table and total posting count are preserved in `data/raw/jobspiq_skills_demand_india_2026-11-11.csv`.
+
+**Variables used:** skill name, active job-posting count, access date, total active technology postings and computed share of listings.
+
+## Dataset 2: AICTE undergraduate CSE model curriculum
+
+**Source:** All India Council for Technical Education (AICTE), *Model Curriculum for UG Degree Course in Computer Science and Engineering (Engineering & Technology)*, 2022. https://www.aicte.gov.in/sites/default/files/Updated-AICTE%20-%20UG%20CSE.pdf
+
+The project uses course descriptions and learning outcomes as documentary evidence. The structured skill-to-curriculum table is stored in `data/processed/aicte_2022_curriculum_skill_mapping.csv`. It records a researcher-coded coverage score and the reasoning behind each classification.
+
+## Future extension datasets
+
+- AISHE final reports (https://aishe.gov.in/aishe-final-report/) can support national-level analysis of higher-education enrolment and institutional outcomes.
+- NIRF institutional disclosures (https://www.nirfindia.org/) can support institution-level placement and median-salary analysis by graduating cohort.
+
+These extension sources are not combined into this analysis because they measure different populations and outcomes from the Jobspiq posting data. A proper graduate-outcomes analysis would require a clearly defined institution, programme, academic year and denominator.
+
+## Access plan
+
+1. Download or capture the public Jobspiq skills CSV/table and preserve the access date and source URL.
+2. Obtain the official AICTE model curriculum PDF and inspect course descriptions and learning outcomes.
+3. Create a transparent mapping table with a coverage score and written evidence for each skill.
+4. Preserve raw and processed files separately to avoid overwriting source data.
+5. If available, collect the student's own official college syllabus and replace the reference mapping with institution-specific evidence.
+
+# Methodology
+
+## Study design
+
+This is a cross-sectional descriptive study of one captured live job-market snapshot. The unit of analysis is a **skill**. The job count is the number of active technology postings that mention a particular skill in the source window. A posting may mention multiple skills, so the percentages are not mutually exclusive and should not be expected to sum to 100%.
+
+## Demand measure
+
+For skill \(i\):
+
+\[
+\text{Demand Share}_i = \frac{\text{Job Postings Mentioning Skill}_i}{\text{Total Active Technology Postings}} \times 100
+\]
+
+The source-reported denominator is 128,053 active technology postings. The high-demand group is defined as the top 25% of the 76 skills displayed (rounded up), ranked by active posting count. This rule is defined before interpreting the results.
+
+## Curriculum coverage rubric
+
+| Score | Classification | Interpretation |
+|---:|---|---|
+| 0 | No explicit match | No named course/topic or sufficiently close learning outcome was identified in the AICTE 2022 reference curriculum reviewed. |
+| 1 | Related or elective coverage | Related foundations, optional specialisation/elective content, or a general topic is present, but the specific tool/vendor is not required or named. |
+| 2 | Core/direct coverage | The reference curriculum explicitly teaches the relevant topic as a core course or clearly stated core learning outcome. |
+
+The scoring is a researcher-created coding rubric, not an official AICTE metric. Vendor-specific tools are not scored as direct/core merely because the underlying general concept is taught.
+
+## Gap-priority indicator
+
+For descriptive ranking only:
+
+\[
+\text{Gap Priority}_i = \text{Demand Share}_i \times (2 - \text{Coverage Score}_i)
+\]
+
+This indicator gives higher values to skills that are mentioned more often and have lower coverage scores. It is not a causal estimate or a prescribed curriculum decision.
+
+## Weighted alignment index
+
+For the top-quartile demand group:
+
+\[
+\text{Alignment Index} = \frac{1}{N}\sum_{i=1}^{N}\frac{\text{Coverage Score}_i}{2}\times100
+\]
+
+This is a transparent summary of the ordinal scores. It depends on researcher coding and should be interpreted cautiously.
+
+# Data preparation
+
+```{r import-data}
+job_data <- read_csv(raw_path, show_col_types = FALSE)
+coverage_data <- read_csv(map_path, show_col_types = FALSE)
+
+analysis_data <- job_data |>
+  left_join(coverage_data, by = "skill") |>
+  arrange(desc(active_job_postings)) |>
+  mutate(
+    demand_rank = row_number(),
+    demand_share_pct = active_job_postings / total_active_technology_postings * 100,
+    high_demand_top_quartile = demand_rank <= ceiling(n() * 0.25),
+    coverage_fraction = curriculum_coverage_score / 2,
+    gap_priority_score = demand_share_pct * (2 - curriculum_coverage_score)
+  )
+
+stopifnot(nrow(analysis_data) == 76)
+stopifnot(!any(is.na(analysis_data$curriculum_coverage_score)))
+```
+
+## Data quality checks
+
+```{r data-quality}
+data_quality <- tibble::tibble(
+  Check = c("Number of skill rows", "Unique skill names", "Missing job counts", "Missing coverage scores", "Negative job counts"),
+  Result = c(
+    nrow(analysis_data),
+    n_distinct(analysis_data$skill),
+    sum(is.na(analysis_data$active_job_postings)),
+    sum(is.na(analysis_data$curriculum_coverage_score)),
+    sum(analysis_data$active_job_postings < 0, na.rm = TRUE)
+  )
+)
+kable(data_quality, caption = "Data quality checks")
+```
+
+# Descriptive analysis and findings
+
+## Overall dataset profile
+
+```{r overall-profile}
+total_postings <- unique(analysis_data$total_active_technology_postings)[1]
+n_skills <- nrow(analysis_data)
+top_quartile_n <- ceiling(n_skills * 0.25)
+
+profile <- tibble::tibble(
+  Measure = c("Active technology postings in source denominator", "Skills displayed in source table", "Skills in top demand quartile", "Observation date"),
+  Value = c(format(total_postings, big.mark = ","), n_skills, top_quartile_n, unique(analysis_data$as_of_date)[1])
+)
+kable(profile, caption = "Dataset profile")
+```
+
+## Most demanded skills
+
+```{r top-skills-table}
+top_15 <- analysis_data |>
+  slice_max(order_by = active_job_postings, n = 15, with_ties = FALSE) |>
+  select(demand_rank, skill, active_job_postings, demand_share_pct, coverage_category)
+kable(top_15, digits = 2, col.names = c("Rank", "Skill", "Active postings", "Share (%)", "Curriculum coverage"),
+      caption = "Top 15 skills by active job postings")
+```
+
+```{r top-skills-plot, fig.cap="Figure 1. Top 15 skills in the captured Indian technology job-posting table."}
+analysis_data |>
+  slice_max(order_by = active_job_postings, n = 15, with_ties = FALSE) |>
+  mutate(skill = reorder(skill, active_job_postings)) |>
+  ggplot(aes(x = skill, y = active_job_postings)) +
+  geom_col() + coord_flip() +
+  scale_y_continuous(labels = comma) +
+  labs(title = "Top 15 technology skills in Indian job postings",
+       x = NULL, y = "Active postings mentioning skill") +
+  theme_minimal()
+```
+
+## Curriculum coverage across all skills
+
+```{r coverage-table}
+coverage_summary <- analysis_data |>
+  count(coverage_category, name = "number_of_skills") |>
+  mutate(percentage = number_of_skills / sum(number_of_skills) * 100)
+kable(coverage_summary, digits = 1,
+      col.names = c("Coverage classification", "Skills", "Share (%)"),
+      caption = "Coverage classification for all skills")
+```
+
+```{r coverage-plot, fig.cap="Figure 2. Researcher-coded coverage classification across all 76 observed skills."}
+analysis_data |>
+  count(coverage_category) |>
+  ggplot(aes(x = coverage_category, y = n)) +
+  geom_col() +
+  labs(title = "Reference-curriculum coverage across observed skills",
+       x = NULL, y = "Number of skills") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 15, hjust = 1))
+```
+
+## Top-quartile skill gap analysis
+
+```{r high-demand-results}
+high_demand <- analysis_data |> filter(high_demand_top_quartile)
+high_demand_summary <- high_demand |>
+  count(coverage_category, name = "number_of_skills") |>
+  mutate(percentage = number_of_skills / sum(number_of_skills) * 100)
+kable(high_demand_summary, digits = 1,
+      col.names = c("Coverage classification", "Skills", "Share of top quartile (%)"),
+      caption = "Curriculum coverage among top-quartile demand skills")
+```
+
+```{r high-demand-table}
+high_gap_table <- high_demand |>
+  arrange(desc(gap_priority_score)) |>
+  select(demand_rank, skill, active_job_postings, demand_share_pct,
+         curriculum_coverage_score, coverage_category, gap_priority_score)
+kable(high_gap_table, digits = 2,
+      col.names = c("Demand rank", "Skill", "Postings", "Share (%)", "Score", "Coverage", "Gap priority"),
+      caption = "Top-quartile demand skills ranked by the descriptive gap-priority indicator")
+```
+
+```{r gap-plot, fig.cap="Figure 3. Gap-priority indicator for high-demand skills. Larger values indicate more postings and lower coded coverage."}
+high_demand |>
+  slice_max(order_by = gap_priority_score, n = 15, with_ties = FALSE) |>
+  mutate(skill = reorder(skill, gap_priority_score)) |>
+  ggplot(aes(x = skill, y = gap_priority_score)) +
+  geom_col() + coord_flip() +
+  labs(title = "Highest-priority gaps within top-demand skills",
+       x = NULL, y = "Demand share (%) × (2 − coverage score)") +
+  theme_minimal()
+```
+
+## Weighted alignment index
+
+```{r alignment-index}
+alignment_index <- mean(high_demand$coverage_fraction) * 100
+core_n <- sum(high_demand$curriculum_coverage_score == 2)
+related_n <- sum(high_demand$curriculum_coverage_score == 1)
+no_match_n <- sum(high_demand$curriculum_coverage_score == 0)
+
+alignment_results <- tibble::tibble(
+  Metric = c("Top-quartile skills", "Core/direct coverage", "Related/elective coverage", "No explicit match", "Weighted alignment index"),
+  Result = c(top_quartile_n, core_n, related_n, no_match_n, sprintf("%.1f%%", alignment_index))
+)
+kable(alignment_results, caption = "Summary of high-demand skill alignment")
+```
+
+# Discussion
+
+The results show the frequency with which skills appear in active technology postings, not the number of people hired with those skills. The top-quartile comparison provides a structured way to review whether the AICTE model curriculum directly addresses, indirectly supports, or does not explicitly identify the most frequently mentioned skills.
+
+A skill scored as **related/elective** should not automatically be described as missing. For example, cloud and data-engineering concepts may be taught through optional specialisations, while a specific commercial cloud vendor or tool may not be named. Similarly, a general database course can teach SQL and relational database concepts without prescribing one database vendor.
+
+The no-explicit-match category is a prompt for further curriculum review, not proof that the skill is absent from every Indian university or college. Institutions can teach additional electives, laboratories, workshops, internships and projects that are outside the model curriculum document.
+
+# Recommendations for further investigation
+
+1. Repeat the mapping using the student's own current college syllabus, lab manuals, electives and project requirements.
+2. Ask faculty or industry mentors to review the mapping rubric and resolve ambiguous skills.
+3. Collect institution-level placement data by programme and graduating year, including the number graduating, the number placed and median salary.
+4. If multiple years of consistent skill-demand snapshots become available, investigate trend changes as a separate descriptive or predictive project.
+5. Consider a student survey to understand which skills students actually practise; a curriculum document alone does not measure student proficiency.
+
+# Limitations
+
+- The demand source covers publicly visible job postings and may not represent all employers, informal hiring, referrals or the total labour market.
+- A job posting can mention multiple skills; skill percentages overlap.
+- The source is a live rolling-window page. This project preserves the visible table and reported denominator captured on 11 November 2026; results may differ on a later access date.
+- The AICTE document is a model curriculum, not the student's verified institutional syllabus.
+- Curriculum coverage is manually coded and subjective, even with a written rubric.
+- Course presence does not prove that students achieve proficiency, complete practical work, or use the skill in an internship.
+- This analysis does not link individual graduates to job postings and therefore does not measure placement probability, salary outcomes, or causal impact of curriculum.
+
+# Conclusion
+
+This descriptive study provides a reproducible first-level comparison between Indian technology job-posting skill mentions and a published AICTE undergraduate CSE reference curriculum. It identifies highly demanded skills, classifies their curriculum representation under a transparent rubric, and ranks potential alignment gaps for further review. The results should be treated as an evidence-based starting point for discussion, not as a definitive judgement on any institution. A stronger higher-education outcomes study should add the student's actual curriculum and cohort-specific placement outcomes.
+
+# References
+
+1. Jobspiq. (2026). *Tech Skills in Demand in India*. Accessed 11 November 2026. https://jobspiq.in/skills. Dataset reuse terms: CC BY 4.0, https://jobspiq.in/data.
+2. All India Council for Technical Education. (2022). *Model Curriculum for UG Degree Course in Computer Science and Engineering (Engineering & Technology).* https://www.aicte.gov.in/sites/default/files/Updated-AICTE%20-%20UG%20CSE.pdf
+3. All India Survey on Higher Education (AISHE). *Final Reports*. https://aishe.gov.in/aishe-final-report/ (potential future extension; not used in current analysis).
+4. National Institutional Ranking Framework. *India Rankings 2025 – Engineering*. https://www.nirfindia.org/Rankings/2025/EngineeringRanking.html (potential future extension; not used in current analysis).
+
+# Appendix: Reproducibility and attribution
+
+The raw Jobspiq table has been retained separately from processed files. The processed mapping file records the evidence and rationale used for every skill. The analysis script and notebook derive rank, share, quartile membership, coverage summaries, the gap-priority indicator and the weighted alignment index from those files.
+
+The source data is attributed to Jobspiq under the CC BY 4.0 terms stated on its public data page. The curriculum mapping is an interpretation of the AICTE model-curriculum document and should be reviewed against the latest official syllabus used by the institution being studied.

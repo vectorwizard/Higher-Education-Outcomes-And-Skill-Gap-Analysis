@@ -1,0 +1,15 @@
+{
+  "snapshot_date": "2026-11-11",
+  "total_active_technology_postings": 128053,
+  "number_of_skills": 76,
+  "top_quartile_count": 19,
+  "top_quartile_rank_cutoff_count": 9558,
+  "high_demand_no_explicit_match": 4,
+  "high_demand_related_or_elective": 13,
+  "high_demand_core_direct": 2,
+  "high_demand_weighted_alignment_index_pct": 44.7,
+  "highest_demand_skill": "Python",
+  "highest_demand_postings": 42872,
+  "highest_demand_share_pct": 33.48,
+  "method_note": "Coverage mapping is a researcher-coded interpretation of AICTE 2022 model curriculum text; it is not an official AICTE score."
+}

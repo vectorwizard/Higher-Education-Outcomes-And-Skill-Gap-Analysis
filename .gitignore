@@ -1,0 +1,7 @@
+.Rhistory
+.RData
+.Rproj.user/
+*.html
+*.pdf
+.DS_Store
+Thumbs.db
